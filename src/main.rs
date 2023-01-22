@@ -1,5 +1,7 @@
 mod upstream;
 
+use std::borrow::Borrow;
+use std::cell::RefCell;
 use clap::{App, Arg};
 use std::io;
 use std::io::{Read, Write};
@@ -29,7 +31,7 @@ fn main() -> io::Result<()> {
 
     // Listen on localhost:8000
     let destinations: Vec<&str> = matches.value_of("destinations").unwrap().split(",").collect();
-    let  upstreams: Vec<Upstream> = destinations.iter().map(|d| Upstream::new(d)).collect();
+    let mut upstreams: Vec<RefCell<Upstream>> = destinations.iter().map(|d| RefCell::new(Upstream::new(d))).collect();
 
     let listen_port = matches.value_of("listen_port").unwrap();
     let listener = TcpListener::bind(format!("127.0.0.1:{}", listen_port))?;
@@ -44,7 +46,7 @@ fn main() -> io::Result<()> {
         let mut dest = &upstreams[dest_index.clone() % destinations.len()];
         dest_index += 1;
         let mut iterations = 0;
-        while !dest.is_live {
+        while !dest.borrow().is_live {
             dest_index += 1;
             dest = &upstreams[dest_index.clone() % destinations.len()];
             iterations += 1;
@@ -52,15 +54,21 @@ fn main() -> io::Result<()> {
                 break;
             }
         }
-        if !dest.is_live {
+        if !dest.borrow().is_live {
             panic!("No live upstreams are available.")
         }
 
-        println!("{}:{}", dest.ip,dest.port);
+        println!("{}:{}", dest.borrow().ip,dest.borrow().port);
         dest_index += 1;
 
         // Connect to the destination IP:port
-        let dest_stream = TcpStream::connect(format!("{}:{}",dest.ip,dest.port))?;
+        let dest_stream = match TcpStream::connect(format!("{}:{}",dest.borrow().ip,dest.borrow().port)) {
+            Ok(s) => s,
+            Err(_) => {
+                dest.borrow_mut().is_live = false;
+                continue;
+            }
+        };
         let source_peer_addr = stream.peer_addr().unwrap();
         let dest_peer_addr = dest_stream.peer_addr().unwrap();
 
