@@ -41,7 +41,21 @@ fn main() -> io::Result<()> {
         let stream = stream?;
         println!("Incoming connection from {}", stream.peer_addr()?);
 
-        let dest = &upstreams[dest_index.clone() % destinations.len()];
+        let mut dest = &upstreams[dest_index.clone() % destinations.len()];
+        dest_index += 1;
+        let mut iterations = 0;
+        while !dest.is_live {
+            dest_index += 1;
+            dest = &upstreams[dest_index.clone() % destinations.len()];
+            iterations += 1;
+            if iterations >= upstreams.len() {
+                break;
+            }
+        }
+        if !dest.is_live {
+            panic!("No live upstreams are available.")
+        }
+
         println!("{}:{}", dest.ip,dest.port);
         dest_index += 1;
 
