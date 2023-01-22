@@ -1,17 +1,17 @@
-mod upstream;
-
-use std::borrow::Borrow;
+use std::borrow::{Borrow, BorrowMut};
 use std::cell::RefCell;
 use clap::{App, Arg};
 use std::io;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::thread;
+
+mod upstream;
+
 use crate::upstream::Upstream;
 
 
 fn main() -> io::Result<()> {
-
     let matches = App::new("Dummy TCP MITM")
         .arg(Arg::with_name("destinations")
             .short('d')
@@ -37,7 +37,6 @@ fn main() -> io::Result<()> {
     let listener = TcpListener::bind(format!("127.0.0.1:{}", listen_port))?;
     let mut dest_index = 0;
 
-
     // Accept incoming connections
     for stream in listener.incoming() {
         let stream = stream?;
@@ -58,11 +57,11 @@ fn main() -> io::Result<()> {
             panic!("No live upstreams are available.")
         }
 
-        println!("{}:{}", dest.borrow().ip,dest.borrow().port);
+        println!("{}:{}", dest.borrow().ip, dest.borrow().port);
         dest_index += 1;
 
         // Connect to the destination IP:port
-        let dest_stream = match TcpStream::connect(format!("{}:{}",dest.borrow().ip,dest.borrow().port)) {
+        let dest_stream = match TcpStream::connect(format!("{}:{}", dest.borrow().ip, dest.borrow().port)) {
             Ok(s) => s,
             Err(_) => {
                 dest.borrow_mut().is_live = false;
