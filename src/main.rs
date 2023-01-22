@@ -13,7 +13,7 @@ use crate::upstream::Upstream;
 
 
 fn main() -> io::Result<()> {
-    let matches = App::new("Dummy TCP MITM")
+    let matches = App::new("TCP Balancer")
         .arg(Arg::with_name("destinations")
             .short('d')
             .long("destinations")
