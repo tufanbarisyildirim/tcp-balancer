@@ -1,7 +1,7 @@
 # Dummy TCP MITM
 
 This is a simple dummy TCP man-in-the-middle (MITM) proxy that listens on a specific port and forwards data between a
-client and a destination server. It is intended for debugging purposes only, and should not be used in production
+client and a destination server. It is intended for debugging & rust exercise purposes only, and should not be used in production
 environments.
 
 To use the proxy, you need to have rust installed on your machine.
