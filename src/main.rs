@@ -1,8 +1,12 @@
+mod upstream;
+
 use clap::{App, Arg};
 use std::io;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::thread;
+use crate::upstream::Upstream;
+
 
 fn main() -> io::Result<()> {
 
@@ -25,6 +29,8 @@ fn main() -> io::Result<()> {
 
     // Listen on localhost:8000
     let destinations: Vec<&str> = matches.value_of("destinations").unwrap().split(",").collect();
+    let  upstreams: Vec<Upstream> = destinations.iter().map(|d| Upstream::new(d)).collect();
+
     let listen_port = matches.value_of("listen_port").unwrap();
     let listener = TcpListener::bind(format!("127.0.0.1:{}", listen_port))?;
     let mut dest_index = 0;
@@ -35,12 +41,12 @@ fn main() -> io::Result<()> {
         let stream = stream?;
         println!("Incoming connection from {}", stream.peer_addr()?);
 
-        let dest_addr = destinations[dest_index % destinations.len()];
-        println!("{}", dest_addr);
+        let dest = &upstreams[dest_index.clone() % destinations.len()];
+        println!("{}:{}", dest.ip,dest.port);
         dest_index += 1;
 
         // Connect to the destination IP:port
-        let dest_stream = TcpStream::connect(dest_addr)?;
+        let dest_stream = TcpStream::connect(format!("{}:{}",dest.ip,dest.port))?;
         let source_peer_addr = stream.peer_addr().unwrap();
         let dest_peer_addr = dest_stream.peer_addr().unwrap();
 
