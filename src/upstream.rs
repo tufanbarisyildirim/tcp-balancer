@@ -5,7 +5,7 @@ pub struct Upstream {
 }
 
 impl Upstream {
-   pub fn new(addr: &str) -> Upstream {
+    pub fn new(addr: &str) -> Upstream {
         let mut parts = addr.split(':');
         let ip = parts.next().unwrap().to_string();
         let port = parts.next().unwrap().parse().unwrap();
